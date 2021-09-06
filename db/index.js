@@ -3,8 +3,8 @@ const client = new pg.Client('postgres://localhost:5432/juicebox-dev');
 
 async function getAllUsers() {
     try {
-        const {rows} = await client.query(
-            `SELECT id, username, name, location, active
+        const {rows} = await client.query(`
+            SELECT id, username, name, location, active
             FROM users;
         `);
         return rows;
@@ -23,6 +23,18 @@ async function getAllPosts() {
             post => getPostById(post.id)
         ));
         return posts;
+    } catch (error) {
+        throw error;
+    }
+}
+
+async function getAllTags() {
+    try {
+        const {rows} = await client.query(`
+            SELECT *
+            FROM tags;
+        `);
+        return rows;
     } catch (error) {
         throw error;
     }
@@ -289,4 +301,5 @@ module.exports = {
     addTagsToPost,
     createPostTag,
     getPostsByTagName,
+    getAllTags,
 }
