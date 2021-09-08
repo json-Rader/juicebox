@@ -1,5 +1,5 @@
-const pg = require('pg');
-const client = new pg.Client('postgres://localhost:5432/juicebox-dev');
+const {Client} = require('pg');
+const client = new Client('postgres://localhost:5432/juicebox-dev');
 
 async function getAllUsers() {
     try {
@@ -124,10 +124,10 @@ async function createTags(tagList) {
         (tag, index) => `$${index + 1}`).join(', ');
         console.log(insertValues, selectValues);
         const queryString = `
-        INSERT INTO tags (name)
-        VALUES (${insertValues})
-        ON CONFLICT (name) DO NOTHING;
-    `
+            INSERT INTO tags (name)
+            VALUES (${insertValues})
+            ON CONFLICT (name) DO NOTHING;
+        `
     console.log(queryString);
     try {
         await client.query(queryString, tagList)
@@ -164,25 +164,33 @@ async function getPostById(postId) {
             FROM posts
             WHERE id=$1;
         `, [postId]);
+  
+        if (!post) {
+            throw {
+                name: "PostNotFoundError",
+                message: "Could not find a post with that postId"
+            };
+        }
 
-        const {rows:tags} = await client.query(`
+  
+        const { rows: tags } = await client.query(`
             SELECT tags.*
             FROM tags
             JOIN post_tags ON tags.id=post_tags."tagId"
             WHERE post_tags."postId"=$1;
-        `, [postId]);
-
-        const {rows:[author]} = await client.query(`
+        `, [postId])
+  
+        const { rows: [author] } = await client.query(`
             SELECT id, username, name, location
             FROM users
             WHERE id=$1;
-        `, [post.authorId]);
-
+        `, [post.authorId])
+  
         post.tags = tags;
         post.author = author;
-
+  
         delete post.authorId;
-
+  
         return post;
     } catch (error) {
         throw error;
@@ -245,7 +253,7 @@ async function updateUser(id, fields = {}) {
 
 async function updatePost(postId, fields = {}) {
 
-    const {tags} = fields; // might be undefined
+    const {tags} = fields;
     delete fields.tags;
 
     const setString = Object.keys(fields).map(
@@ -286,6 +294,20 @@ async function updatePost(postId, fields = {}) {
     }
 }
 
+async function getUserByUsername(username) {
+    try {
+        const { rows: [user] } = await client.query(`
+            SELECT *
+            FROM users
+            WHERE username=$1;
+        `, [username]);
+  
+        return user;
+    } catch (error) {
+        throw error;
+    }
+}
+
 module.exports = {
     client,
     getAllUsers,
@@ -302,4 +324,5 @@ module.exports = {
     createPostTag,
     getPostsByTagName,
     getAllTags,
+    getUserByUsername,
 }
