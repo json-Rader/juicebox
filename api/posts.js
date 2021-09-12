@@ -6,11 +6,8 @@ const {requireUser} = require('./utils');
 postsRouter.get('/', async (req, res) => {
     try {
     	const allPosts = await getAllPosts();
-  
       	const posts = allPosts.filter(post => {
-        	const posts = allPosts.filter(post => {
-            	return post.active || (req.user && post.author.id === req.user.id);
-          	});
+            return post.active || (req.user && post.author.id === req.user.id);
       	});
       	res.send({
         	posts
